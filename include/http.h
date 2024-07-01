@@ -1,6 +1,8 @@
 #ifndef HTTP_H__
 #define HTTP_H__
 
+#define HTTP_HEADER_MAX_SIZE (4 * 1024)
+
 // GET / HTTP/1.1
 // Host: mythos-cloud.com:443
 // Connection: keep-alive
@@ -10,6 +12,19 @@
 // Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
 // Accept-Encoding: gzip, deflate
 // Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7
+
+enum http_request_field {
+	HTTP_REQUEST_FIELD_HOST = 0,
+	HTTP_REQUEST_FIELD_CONNECTION,
+	HTTP_REQUEST_FIELD_CACHE_CONTROL,
+	HTTP_REQUEST_FIELD_UPGRADE_REQUEST,
+	HTTP_REQUEST_FIELD_USER_AGENT,
+	HTTP_REQUEST_FIELD_ACCEPT,
+	HTTP_REQUEST_FIELD_ACCEPT_ENCODING,
+	HTTP_REQUEST_FIELD_ACCEPT_LANGUAGE,
+
+	HTTP_REQUEST_FIELD_UNKNOWN
+};
 
 enum http_request_method {
 	HTTP_REQUEST_GET = 0,
@@ -22,40 +37,28 @@ enum http_request_method {
 	HTTP_REQUEST_UNKNOWN
 };
 
-
 enum http_version {
-	HTTP_VERSION_1_1,
+	HTTP_VERSION_1_1 = 0,
 	HTTP_VERSION_2_0,
 	HTTP_VERSION_3_0,
 
 	HTTP_VERSION_UNKNOWN
 };
 
-enum http_status {
-	HTTP_STATUS_OK = 200
+struct http_header_field {
+	char *key;
+	char *value;
+
+	struct http_header_field *next;
 };
 
 struct http_request_header
 {
-	enum http_request_method method;
-	char *url;
-	enum http_version version;
-};
+	char buffer[HTTP_HEADER_MAX_SIZE];
 
-struct http_response_header
-{
-	enum http_version version;
-	enum http_status status;
-};
+	char *method; char *url; char *version;
 
-struct http_header
-{
-	int type;
-
-	union {
-		struct http_request_header req;
-		struct http_response_header res;
-	};
+	struct http_header_field *field_head;
 };
 
 struct http_request_header *http_request_header_create(char *request);
