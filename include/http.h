@@ -62,6 +62,11 @@ struct http_request_header
 };
 
 struct http_request_header *http_request_header_create(char *request);
+
+struct http_header_field *http_find_field(
+	struct http_request_header *request, char *key
+);
+
 void http_request_header_destroy(struct http_request_header *header);
 
 #endif

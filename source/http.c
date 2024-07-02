@@ -183,6 +183,20 @@ static void free_field_list(struct http_header_field *list)
 	free(list);
 }
 
+struct http_header_field *http_find_field(
+	struct http_request_header *header,char *key
+) {
+	for (struct http_header_field *field = header->field_head;
+	     field != NULL; field = field->next)
+	{
+		if (strstr(field->key, key))
+			return  field;
+	}
+
+	return NULL;
+}
+
+
 void http_request_header_destroy(struct http_request_header *header)
 {
 	free_field_list(header->field_head);
