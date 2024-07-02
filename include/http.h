@@ -69,4 +69,6 @@ struct http_header_field *http_find_field(
 
 void http_request_header_destroy(struct http_request_header *header);
 
+enum http_request_method http_get_method(struct http_request_header *);
+
 #endif

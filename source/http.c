@@ -5,7 +5,6 @@
 #include <string.h>
 #include <ctype.h>
 
-/*
 const char *http_request_method[HTTP_REQUEST_UNKNOWN] = {
 	[HTTP_REQUEST_GET] = "GET",
 	[HTTP_REQUEST_PUT] = "PUT",
@@ -31,7 +30,6 @@ const char *http_request_field[HTTP_REQUEST_FIELD_UNKNOWN] = {
 	[HTTP_REQUEST_FIELD_ACCEPT_ENCODING] = "Accept-Encoding",
 	[HTTP_REQUEST_FIELD_ACCEPT_LANGUAGE] = "Accept-Language"
 };
-*/
 
 static char *skip_whitespace(char *string)
 {
@@ -196,6 +194,14 @@ struct http_header_field *http_find_field(
 	return NULL;
 }
 
+enum http_request_method http_get_method(struct http_request_header *header)
+{
+	for (int i = 0; i < HTTP_REQUEST_OPTIONS; i++)
+		if (strcmp(header->method, http_request_method[i]))
+			return i;
+
+	return HTTP_REQUEST_UNKNOWN;
+}
 
 void http_request_header_destroy(struct http_request_header *header)
 {
