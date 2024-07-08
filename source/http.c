@@ -269,52 +269,39 @@ void http_request_header_destroy(struct http_request_header *header)
 	free_field_list(header->field_head);
 	free(header);
 }
-/*
-HTTP/1.1 200 OK
-Access-Control-Allow-Origin: *
-Connection: Keep-Alive
-Content-Encoding: gzip
-Content-Type: text/html; charset=utf-8
-Date: Mon, 18 Jul 2016 16:06:00 GMT
-Etag: "c561c68d0ba92bbeb8b0f612a9199f722e3a621a"
-Keep-Alive: timeout=5, max=997
-Last-Modified: Mon, 18 Jul 2016 02:36:04 GMT
-Server: Apache
-Set-Cookie: mykey=myvalue; expires=Mon, 17-Jul-2017 16:06:00 GMT; Max-Age=31449600; Path=/; secure
-Transfer-Encoding: chunked
-Vary: Cookie, Accept-Encoding
-X-Backend-Server: developer2.webapp.scl3.mozilla.com
-X-Cache-Info: not cacheable; meta data too large
-X-kuma-revision: 1085259
-x-frame-options: DENY
-*/
 
 static int write_field(char *buffer, int remain,
-		       struct http_header_field *field)
+		       int n_field, va_list varg)
 {
-	int klen = strlen(field->key);
-	int vlen = strlen(field->value);
-	int total = klen + strlen(": ") + vlen + strlen("\r\n");
+	char *key, *value;
+	int klen, vlen, total;
+
+	if (n_field <= 0)
+		return remain;
+
+	key = va_arg(varg, char *);
+	value = va_arg(varg, char *);
+
+	klen = strlen(key);
+	vlen = strlen(value);
+
+	total = klen + strlen(": ") + vlen + strlen("\r\n");
 
 	if (remain <= total)
 		return -1;
 
-	sprintf(buffer, "%s: %s\r\n", field->key, field->value);
-
-	if (field->next) {
-		return write_field(
-			buffer + total, remain - total, field->next
-		);
-	}
-
-	return 0;
+	sprintf(buffer, "%s: %s\r\n", key, value);
+	
+	return write_field(buffer + total, remain - total, n_field - 1, varg);
 }
+
 struct http_response_header *http_make_response_header(
 	enum http_version version, enum http_status_code status,
-	struct http_header_field *field_head
+	int n_field, ...
 ) {
 	struct http_response_header *header;
 	int writelen = 0;
+	va_list varg;
 
 	header = malloc(sizeof(struct http_response_header));
 	if (header == NULL)
@@ -322,16 +309,27 @@ struct http_response_header *http_make_response_header(
 
 	header->version = version;
 	header->status = status;
-	header->field_head = field_head;
 
 	writelen = sprintf(
 		header->buffer, "%s %d %s\r\n",
 	 	http_version[version], status, http_status_code[status]
 	);
 
-	if (write_field(header->buffer, HTTP_HEADER_MAX_SIZE - writelen,
-			field_head) == -1)
+	va_start(varg, n_field);
+	writelen = write_field(
+		header->buffer + writelen,
+		HTTP_HEADER_MAX_SIZE - writelen,
+		n_field, varg
+	);
+	va_end(varg);
+
+	if (writelen == -1)
 		goto FREE_HEADER;
+
+	if (writelen < strlen("\r\n") + 1 /* '\0' */)
+		goto FREE_HEADER;
+
+	sprintf(&header->buffer[HTTP_HEADER_MAX_SIZE - writelen], "\r\n");
 
 	return header;
 

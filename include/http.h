@@ -89,7 +89,7 @@ struct http_header_field *http_create_header_field(int field, ...);
 enum http_request_method http_get_method(struct http_request_header *);
 
 struct http_response_header *http_make_response_header(
-	enum http_version , enum http_status_code , struct http_header_field *
+	enum http_version , enum http_status_code , int n_field, ...
 );
 void http_response_header_destroy(struct http_response_header *);
 
