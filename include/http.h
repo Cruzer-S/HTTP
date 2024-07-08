@@ -45,6 +45,11 @@ enum http_version {
 	HTTP_VERSION_UNKNOWN
 };
 
+enum http_status_code {
+	HTTP_STATUS_CODE_OK = 200,
+	HTTP_STATUS_CODE_UNKNOWN = 600,
+};
+
 struct http_header_field {
 	char *key;
 	char *value;
@@ -52,8 +57,16 @@ struct http_header_field {
 	struct http_header_field *next;
 };
 
-struct http_request_header
-{
+struct http_response_header {
+	char buffer[HTTP_HEADER_MAX_SIZE];
+
+	enum http_version version;
+	enum http_status_code status;
+
+	struct http_header_field *field_head;
+};
+
+struct http_request_header {
 	char buffer[HTTP_HEADER_MAX_SIZE];
 
 	char *method; char *url; char *version;
@@ -70,6 +83,14 @@ struct http_header_field *http_find_field(
 
 void http_request_header_destroy(struct http_request_header *header);
 
+void http_destroy_field_list(struct http_header_field *field_head);
+struct http_header_field *http_create_header_field(int field, ...);
+
 enum http_request_method http_get_method(struct http_request_header *);
+
+struct http_response_header *http_make_response_header(
+	enum http_version , enum http_status_code , struct http_header_field *
+);
+void http_response_header_destroy(struct http_response_header *);
 
 #endif

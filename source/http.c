@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 const char *http_request_method[HTTP_REQUEST_UNKNOWN] = {
 	[HTTP_REQUEST_GET] = "GET",
@@ -29,6 +30,10 @@ const char *http_request_field[HTTP_REQUEST_FIELD_UNKNOWN] = {
 	[HTTP_REQUEST_FIELD_ACCEPT] = "Accept",
 	[HTTP_REQUEST_FIELD_ACCEPT_ENCODING] = "Accept-Encoding",
 	[HTTP_REQUEST_FIELD_ACCEPT_LANGUAGE] = "Accept-Language"
+};
+
+const char *http_status_code[HTTP_STATUS_CODE_UNKNOWN] = {
+	[HTTP_STATUS_CODE_OK] = "OK"
 };
 
 static char *skip_whitespace(char *string)
@@ -210,8 +215,131 @@ enum http_request_method http_get_method(struct http_request_header *header)
 	return HTTP_REQUEST_UNKNOWN;
 }
 
+void http_destroy_field_list(struct http_header_field *field_head)
+{
+	if (field_head->next != NULL)
+		http_destroy_field_list(field_head->next);
+
+	free(field_head->key);
+	free(field_head->value);
+
+	free(field_head);
+}
+
+struct http_header_field *http_create_field_list(int n_field, ...)
+{
+	struct http_header_field *field_head = NULL;
+
+	va_list varg;
+
+	va_start(varg, n_field);
+
+	for (int i = 0; i < n_field; i++) {
+		struct http_header_field *field;
+
+		field = malloc(sizeof(struct http_header_field));
+
+		field->key = strdup(va_arg(varg, char *));
+		if (field->key == NULL) goto FREE_FIELD;
+
+		field->value = strdup(va_arg(varg, char *));
+		if (field->value == NULL) goto FREE_KEY;
+
+		field->next = NULL;
+		if (field_head != NULL)
+			field_head->next = field;
+
+		field_head = field;
+
+		continue;
+
+	FREE_KEY:	free(field->key);
+	FREE_FIELD:	free(field);
+		http_destroy_field_list(field_head);
+		break;
+	}
+
+	va_end(varg);
+
+	return field_head;
+}
+
 void http_request_header_destroy(struct http_request_header *header)
 {
 	free_field_list(header->field_head);
+	free(header);
+}
+/*
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Connection: Keep-Alive
+Content-Encoding: gzip
+Content-Type: text/html; charset=utf-8
+Date: Mon, 18 Jul 2016 16:06:00 GMT
+Etag: "c561c68d0ba92bbeb8b0f612a9199f722e3a621a"
+Keep-Alive: timeout=5, max=997
+Last-Modified: Mon, 18 Jul 2016 02:36:04 GMT
+Server: Apache
+Set-Cookie: mykey=myvalue; expires=Mon, 17-Jul-2017 16:06:00 GMT; Max-Age=31449600; Path=/; secure
+Transfer-Encoding: chunked
+Vary: Cookie, Accept-Encoding
+X-Backend-Server: developer2.webapp.scl3.mozilla.com
+X-Cache-Info: not cacheable; meta data too large
+X-kuma-revision: 1085259
+x-frame-options: DENY
+*/
+
+static int write_field(char *buffer, int remain,
+		       struct http_header_field *field)
+{
+	int klen = strlen(field->key);
+	int vlen = strlen(field->value);
+	int total = klen + strlen(": ") + vlen + strlen("\r\n");
+
+	if (remain <= total)
+		return -1;
+
+	sprintf(buffer, "%s: %s\r\n", field->key, field->value);
+
+	if (field->next) {
+		return write_field(
+			buffer + total, remain - total, field->next
+		);
+	}
+
+	return 0;
+}
+struct http_response_header *http_make_response_header(
+	enum http_version version, enum http_status_code status,
+	struct http_header_field *field_head
+) {
+	struct http_response_header *header;
+	int writelen = 0;
+
+	header = malloc(sizeof(struct http_response_header));
+	if (header == NULL)
+		goto RETURN_NULL;
+
+	header->version = version;
+	header->status = status;
+	header->field_head = field_head;
+
+	writelen = sprintf(
+		header->buffer, "%s %d %s\r\n",
+	 	http_version[version], status, http_status_code[status]
+	);
+
+	if (write_field(header->buffer, HTTP_HEADER_MAX_SIZE - writelen,
+			field_head) == -1)
+		goto FREE_HEADER;
+
+	return header;
+
+FREE_HEADER:	free(header);
+RETURN_NULL:	return NULL;
+}
+
+void http_response_header_destroy(struct http_response_header *header)
+{
 	free(header);
 }
