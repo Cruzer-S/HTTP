@@ -94,8 +94,6 @@ static struct http_header_field *parse_request_field(
 	if (next_line != NULL)
 		*next_line = endptr + 2;
 
-	printf("key: %s\tvalue: %s\n", field->key, field->value);
-
 	return field;
 
 FREE_FIELD:	free(field);
