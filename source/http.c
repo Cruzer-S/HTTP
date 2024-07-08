@@ -206,7 +206,7 @@ struct http_header_field *http_find_field(
 enum http_request_method http_get_method(struct http_request_header *header)
 {
 	for (int i = 0; i < HTTP_REQUEST_OPTIONS; i++)
-		if (strcmp(header->method, http_request_method[i]))
+		if ( !strcmp(header->method, http_request_method[i]) )
 			return i;
 
 	return HTTP_REQUEST_UNKNOWN;
