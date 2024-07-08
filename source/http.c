@@ -132,26 +132,14 @@ static char *parse_request_first_line(struct http_request_header *header)
 	return ptr;
 }
 
-struct http_request_header *http_request_header_create(char *string)
+int http_request_header_parse(struct http_request_header *header)
 {
-	struct http_request_header *header;
 	struct http_header_field *field;
-	size_t header_len = strlen(string);
-
 	char *line;
-
-	if ((header_len + 1) >= HTTP_HEADER_MAX_SIZE)
-		goto RETURN_NULL;
-
-	header = malloc(sizeof(struct http_request_header));
-	if (header == NULL)
-		goto RETURN_NULL;
-
-	memcpy(header->buffer, string, header_len + 1);
 
 	line = parse_request_first_line(header);
 	if (line == NULL)
-		goto FREE_HEADER;
+		return -1;
 
 	while ( strncmp(line, "\r\n", 2) 
 	     && (field = parse_request_field(header, line, &line)) )
@@ -164,6 +152,27 @@ struct http_request_header *http_request_header_create(char *string)
 		field->next = header->field_head;
 		header->field_head = field;
 	}
+
+	return 0;
+}
+
+struct http_request_header *http_request_header_create(char *string)
+{
+	struct http_request_header *header;
+
+	size_t header_len = strlen(string);
+
+	if ((header_len + 1) >= HTTP_HEADER_MAX_SIZE)
+		goto RETURN_NULL;
+
+	header = malloc(sizeof(struct http_request_header));
+	if (header == NULL)
+		goto RETURN_NULL;
+
+	memcpy(header->buffer, string, header_len + 1);
+
+	if (http_request_header_parse(header) == -1)
+		goto FREE_HEADER;
 
 	return header;
 
