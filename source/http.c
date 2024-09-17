@@ -163,16 +163,16 @@ struct http_request_header *http_request_header_create(char *string)
 {
 	struct http_request_header *header;
 
-	size_t header_len = strlen(string);
+	header->headerlen = strlen(string);
 
-	if ((header_len + 1) >= HTTP_HEADER_MAX_SIZE)
+	if ((header->headerlen + 1) >= HTTP_HEADER_MAX_SIZE)
 		goto RETURN_NULL;
 
 	header = malloc(sizeof(struct http_request_header));
 	if (header == NULL)
 		goto RETURN_NULL;
 
-	memcpy(header->buffer, string, header_len + 1);
+	memcpy(header->buffer, string, header->headerlen + 1);
 
 	if (http_request_header_parse(header) == -1)
 		goto FREE_HEADER;

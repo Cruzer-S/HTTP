@@ -68,6 +68,7 @@ struct http_response_header {
 
 struct http_request_header {
 	char buffer[HTTP_HEADER_MAX_SIZE];
+	int headerlen;
 
 	char *method; char *url; char *version;
 
