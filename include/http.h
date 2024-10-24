@@ -77,6 +77,7 @@ struct http_request_header {
 
 struct http_request_header *http_request_header_create(char *request);
 int http_request_header_parse(struct http_request_header *header);
+void http_free_field_list(struct http_header_field *list);
 
 struct http_header_field *http_find_field(
 	struct http_request_header *request, char *key

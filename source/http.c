@@ -183,12 +183,12 @@ FREE_HEADER:	free(header);
 RETURN_NULL:	return NULL;
 }
 
-static void free_field_list(struct http_header_field *list)
+void http_free_field_list(struct http_header_field *list)
 {
 	if (list == NULL)
 		return ;
 
-	free_field_list(list->next);
+	http_free_field_list(list->next);
 
 	free(list);
 }
