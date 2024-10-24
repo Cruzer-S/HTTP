@@ -266,7 +266,7 @@ struct http_header_field *http_create_field_list(int n_field, ...)
 
 void http_request_header_destroy(struct http_request_header *header)
 {
-	free_field_list(header->field_head);
+	http_free_field_list(header->field_head);
 	free(header);
 }
 
