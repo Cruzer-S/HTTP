@@ -47,6 +47,13 @@ enum http_version {
 
 enum http_status_code {
 	HTTP_STATUS_CODE_OK = 200,
+
+	HTTP_STATUS_CODE_BAD_REQUEST = 400,
+	HTTP_STATUS_CODE_URI_TOO_LONG = 414,
+	HTTP_STATUS_CODE_NOT_FOUND = 404,
+
+	HTTP_STATUS_CODE_INTERNAL = 500,
+
 	HTTP_STATUS_CODE_UNKNOWN = 600,
 };
 
@@ -82,6 +89,8 @@ void http_free_field_list(struct http_header_field *list);
 struct http_header_field *http_find_field(
 	struct http_request_header *request, char *key
 );
+
+const char *http_status_code_string(enum http_status_code );
 
 void http_request_header_destroy(struct http_request_header *header);
 

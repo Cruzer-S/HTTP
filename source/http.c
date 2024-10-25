@@ -33,7 +33,11 @@ const char *http_request_field[HTTP_REQUEST_FIELD_UNKNOWN] = {
 };
 
 const char *http_status_code[HTTP_STATUS_CODE_UNKNOWN] = {
-	[HTTP_STATUS_CODE_OK] = "OK"
+	[HTTP_STATUS_CODE_OK] = "OK",
+	[HTTP_STATUS_CODE_BAD_REQUEST] = "Bad request",
+	[HTTP_STATUS_CODE_URI_TOO_LONG] = "URI too long",
+	[HTTP_STATUS_CODE_NOT_FOUND] = "Not found",
+	[HTTP_STATUS_CODE_INTERNAL] = "Internal server error",
 };
 
 static char *skip_whitespace(char *string)
@@ -340,4 +344,9 @@ RETURN_NULL:	return NULL;
 void http_response_header_destroy(struct http_response_header *header)
 {
 	free(header);
+}
+
+const char *http_status_code_string(enum http_status_code code)
+{
+	return http_status_code[code];
 }
